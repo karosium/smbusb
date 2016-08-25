@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libsmbusb
+Description: Library for the USB SMBus interaface based on the Cypress FX2LP
+URL: http://www.karosium.com
+#Requires.private: libusb-1.0
+Version: @VERSION@
+Libs: -L${libdir} -lsmbusb
+Libs.private:
+Cflags: -I${includedir}

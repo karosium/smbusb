@@ -1,0 +1,1 @@
+gcc -Wall -shared smbusb.c fxloader.c -I../libusb -L../libusb -lusb-1.0 -olibsmbusb.dll
