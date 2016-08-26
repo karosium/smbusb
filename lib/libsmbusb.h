@@ -15,6 +15,10 @@
 * License along with this library; if not, write to the Free Software
 * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
+#ifdef _WIN32
+#include <windows.h>
+#define sleep(x) Sleep(1000*x)
+#endif
 
 #define ERR_DEVICE_OPEN	-1
 #define ERR_ALREADY_OPEN -5
@@ -60,7 +64,6 @@
 #define SMB_TEST_ADDRESS_ACK 0x90
 #define SMB_TEST_COMMAND_ACK 0x91
 #define SMB_TEST_COMMAND_WRITE 0x92
-
 
 extern int SMBOpenDeviceVIDPID(unsigned int vid,unsigned int pid);
 extern int SMBOpenDeviceBusAddr(unsigned int bus, unsigned int addr);
