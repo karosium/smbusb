@@ -126,7 +126,7 @@ void printUsage() {
 	  printf("--size=0x<size> ,  -s 0x<size>          =   size of data to read or write\n");
 	  printf("--preset=<preset> , -p <preset>         =   sets address and size based on a preset, see below.\n");
 	  printf("--execute                               =   exit the Boot ROM and execute firmware\n");
-	  printf("--no_verify                             =   skip verification after flashing (not recommended)\n");
+	  printf("--no-verify                             =   skip verification after flashing (not recommended)\n");
 	  printf("\n");
 	  printf("Presets:\n");
 	  printf("df1                                     =   DataFlash1 (usually dynamic data to persist between resets)\n");
@@ -198,8 +198,8 @@ int main(int argc, char **argv)
 	{
 		static struct option long_options[] =
 	        {
-	          {"confirm_delete", no_argument,       &confirmDelete, 1},
-	          {"no_verify", no_argument,       &noVerify, 1},
+	          {"confirm-delete", no_argument,       &confirmDelete, 1},
+	          {"no-verify", no_argument,       &noVerify, 1},
 	          {"execute",  no_argument, &execute,1},
 
 	          {"address",    required_argument, 0, 'a'},
@@ -323,7 +323,7 @@ int main(int argc, char **argv)
 	
 	if (ramIn !=NULL) {
 		if (!confirmDelete) {
-			printf("This may erase and reprogram flash memory on the microcontroller.\nIf you're sure add --confirm_delete and try again.\n");
+			printf("This may erase and reprogram flash memory on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
 			exit(0);
 		}
 		printf("Erasing flash block starting at 0x%04x ...\n",opAddress);

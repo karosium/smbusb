@@ -13,7 +13,7 @@
 
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 0
-#define VERSION_REVISION 0
+#define VERSION_REVISION 1
 
 #define SYNCDELAY SYNCDELAY4;
 
@@ -494,8 +494,12 @@ BOOL handle_vendorcommand(BYTE cmd) {
 	i=0; 
 	blocklen=255;
 	while (i<blocklen) {
-		b = i2c_bytein(i==0,FALSE,i==blocklen-2,i==blocklen-1);		
+		b = i2c_bytein(i==0,FALSE,i==blocklen-2,i==blocklen-1);				
 		if (i==0) { 	
+			if (b>0xFE || b==0) {
+				//not a valid block readable command
+				goto rlfail;
+			}
 			blocklen = b+2; //read the PEC byte always (+1 the blocksz, +1 the pec)
 		} 
 		if (pec_enabled && i<blocklen-1) pec = pec_crc(pec,b); // last byte is PEC, don't need to include that in crc
@@ -519,8 +523,6 @@ BOOL handle_vendorcommand(BYTE cmd) {
 
 	if (pec_enabled) {
 		if (rpec != pec) {
-			 EP0BCH=0;
-			 EP0BCL=0;	
 			 pec_failed=TRUE;	
  			 goto rlfail;
 		}		
@@ -532,7 +534,10 @@ BOOL handle_vendorcommand(BYTE cmd) {
 	goto rlsuccess;
 
 	rlfail:
-	i2c_stop();
+
+	EP0BCH=0;
+	EP0BCL=0;	
+
 	return FALSE;
 	
 	rlsuccess:

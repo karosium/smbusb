@@ -130,13 +130,13 @@ void printHeader() {
 void printUsage() {
 	  printHeader();
 	  printf("options:\n");
-	  printf("--save_program=<file> ,  -p <file>      =   save the chip's program flash to <file>\n");
-	  printf("--save_eeprom=<file> ,   -e <file>      =   save the chip's eeprom(data) flash to <file>\n");
-	  printf("--flash_program=<file> , -f <file>      =   flash the <file> to the chip's program flash\n");
-	  printf("--flash_eeprom=<file> ,  -w <file>      =   flash the <file> to the chip's eeprom(data) flash\n");
+	  printf("--save-program=<file> ,  -p <file>      =   save the chip's program flash to <file>\n");
+	  printf("--save-eeprom=<file> ,   -e <file>      =   save the chip's eeprom(data) flash to <file>\n");
+	  printf("--flash-program=<file> , -f <file>      =   flash the <file> to the chip's program flash\n");
+	  printf("--flash-eeprom=<file> ,  -w <file>      =   flash the <file> to the chip's eeprom(data) flash\n");
 	  printf("--execute                               =   exit the Boot ROM and execute program flash\n");
-	  printf("--no_verify                             =   skip verification after flashing (not recommended)\n");
-	  printf("--no_pec                                =   disable SMBus Packet Error Checking (not recommended)\n");
+	  printf("--no-verify                             =   skip verification after flashing (not recommended)\n");
+	  printf("--no-pec                                =   disable SMBus Packet Error Checking (not recommended)\n");
 }
 
 int main(int argc, char **argv)
@@ -168,15 +168,15 @@ int main(int argc, char **argv)
 	{
 		static struct option long_options[] =
 	        {
-	          {"confirm_delete", no_argument,       &confirmDelete, 1},
-	          {"no_verify", no_argument,       &noVerify, 1},
-	 	  {"no_pec", no_argument,       &noPec, 1},		
+	          {"confirm-delete", no_argument,       &confirmDelete, 1},
+	          {"no-verify", no_argument,       &noVerify, 1},
+	 	  {"no-pec", no_argument,       &noPec, 1},		
 	          {"execute",    no_argument, &execute,1},
 
-	          {"save_program",  required_argument, 0, 'p'},
-	          {"save_eeprom",  required_argument, 0, 'e'},
-	          {"flash_program",    required_argument, 0, 'w'},
-	          {"flash_eeprom",    required_argument, 0, 'f'},
+	          {"save-program",  required_argument, 0, 'p'},
+	          {"save-eeprom",  required_argument, 0, 'e'},
+	          {"flash-program",    required_argument, 0, 'w'},
+	          {"flash-eeprom",    required_argument, 0, 'f'},
 
 	          {0, 0, 0, 0}
         };
@@ -312,7 +312,7 @@ int main(int argc, char **argv)
 	
 	if (programIn !=NULL) {
 		if (!confirmDelete) {
-			printf("This will erase and reprogram the program flash on the microcontroller.\nIf you're sure add --confirm_delete and try again.\n");
+			printf("This will erase and reprogram the program flash on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
 			exit(0);
 		}
 		printf("Erasing program flash\n");

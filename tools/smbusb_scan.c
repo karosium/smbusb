@@ -68,16 +68,20 @@ void printUsage() {
 	  printf("options:\n");
 	  printf("--address                , -a                  =   scan for address ACK (START, ADDR, STOP)\n");
 	  printf("--command <addr>         , -c <addr>           =   scan for command ACK (START, ADDR, CMD, STOP)\n");
-	  printf("--command_write <addr>   , -w <addr>           =   probe command writability for byte, word, block or more\n");
+	  printf("--command-write <addr>   , -w <addr>           =   probe command writability for byte, word, block or more\n");
+	  printf("--begin=<#>              , -b <#>              =   address or command to start scan at\n");
+	  printf("--end=<#>                , -e <#>              =   address or command to end scan at\n");
 	  printf("--skip=<#,#,...>         , -s <#,#,...>        =   comma delimited list of HEX addresses or commands to skip during scan\n");
 	  printf("\n<addr> is always the read address in HEX\n");
 }
 
-void printSkipMap(unsigned char skipMap[]) {
+void printSkipMap(int start, int end, unsigned char skipMap[]) {
 	int i;
 	char haveSkip=0;
 
+	printf("Scan range: %02x - %02x\n",start,end);
 	printf("Skipping: ");
+
 	for (i=0;i<256;i++) { 
 		if (skipMap[i] == 255) { 
 			printf("%x ",i); 
@@ -97,6 +101,9 @@ int main(int argc, char **argv)
 	static int scanMode=0;
 
 	char didAck=0;
+	int start=0;
+	int end=0xFF;
+
 	int status;
 	int c,i;
 	unsigned char *token;
@@ -112,7 +119,9 @@ int main(int argc, char **argv)
 	        {
 	          {"address", no_argument,       0, 'a'},
 	          {"command", required_argument,       0, 'c'},
-	 	  {"command_write", required_argument, 0,'w'},		
+	 	  {"command-write", required_argument, 0,'w'},		
+	 	  {"begin", required_argument, 0,'b'},
+	 	  {"end", required_argument, 0,'e'},
 
 	          {"skip",  required_argument, 0, 's'},
 
@@ -121,7 +130,7 @@ int main(int argc, char **argv)
 
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "ac:w:s:h",
+      c = getopt_long (argc, argv, "ac:w:s:e:b:h",
                        long_options, &option_index);
 
       if (c == -1)
@@ -149,6 +158,12 @@ int main(int argc, char **argv)
 		skipMap[strtol(token,NULL,16)] = 0xFF;
           break;
 
+	case 'b':
+		start=strtol(optarg,NULL,16);
+	  break;
+	case 'e':
+		end=strtol(optarg,NULL,16);
+	  break;
 	case 'h':
         case '?':
 		printUsage();
@@ -173,9 +188,9 @@ int main(int argc, char **argv)
 			printf("Scanning for addresses..\n");
 			skipMap[0xA0] = 0xFF; 	// reserved addresses belong to the FX2 config eeprom
 			skipMap[0xA1] = 0xFF;   // messing with it like this can hang the device
-			printSkipMap(skipMap);
+			printSkipMap(start,end,skipMap);
 		
-			for(i=0;i<256;i++) {
+			for(i=start;i<end;i++) {
 				if (skipMap[i] != 0xFF) { 
 					status = SMBTestAddressACK(i);		
 					if (status< 0) printf("[%x] ERROR: %d\n",i,status);
@@ -186,8 +201,8 @@ int main(int argc, char **argv)
 			break;
 		case SCAN_COMMAND:
 			printf("Scanning for commands..\n");
-			printSkipMap(skipMap);
-			for(i=0;i<256;i++) {
+			printSkipMap(start,end,skipMap);
+			for(i=start;i<end;i++) {
 				if (skipMap[i] != 0xFF) { 
 					status = SMBTestCommandACK(address,i);
 					if (status< 0) printf("[%x] ERROR: %d\n",i,status);
@@ -200,8 +215,8 @@ int main(int argc, char **argv)
 			break;
 		case SCAN_COMMAND_WRITE:
 			printf("Scanning for command writability..\n");
-			printSkipMap(skipMap);
-			for(i=0;i<256;i++) {
+			printSkipMap(start,end,skipMap);
+			for(i=start;i<end;i++) {
 				if (skipMap[i] != 0xFF) {
 					status = SMBTestCommandWrite(address,i);
 					if (status< 0) {
