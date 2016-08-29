@@ -474,10 +474,10 @@ BOOL handle_vendorcommand(BYTE cmd) {
 	} 
 
 	if (!i2c_start()) goto rlfail;
-	if (!i2c_byteout(smb_addr)) goto rlfail;
-	if (!i2c_byteout(smb_cmd)) goto rlfail;
+	if (!i2c_byteout(smb_addr)) goto rlstopfail;
+	if (!i2c_byteout(smb_cmd)) goto rlstopfail;
 	i2c_restart();
-	if (!i2c_byteout(smb_addr+1)) goto rlfail;
+	if (!i2c_byteout(smb_addr+1)) goto rlstopfail;
 	if (pec_enabled) {
 		pec = pec_crc(pec,smb_addr);
 		pec = pec_crc(pec,smb_cmd);
@@ -498,7 +498,7 @@ BOOL handle_vendorcommand(BYTE cmd) {
 		if (i==0) { 	
 			if (b>0xFE || b==0) {
 				//not a valid block readable command
-				goto rlfail;
+				goto rlstopfail;
 			}
 			blocklen = b+2; //read the PEC byte always (+1 the blocksz, +1 the pec)
 		} 
@@ -533,8 +533,9 @@ BOOL handle_vendorcommand(BYTE cmd) {
 	
 	goto rlsuccess;
 
+	rlstopfail:
+	i2c_stop();
 	rlfail:
-
 	EP0BCH=0;
 	EP0BCL=0;	
 
