@@ -127,6 +127,8 @@ void printUsage() {
 	  printf("--preset=<preset> , -p <preset>         =   sets address and size based on a preset, see below.\n");
 	  printf("--execute                               =   exit the Boot ROM and execute firmware\n");
 	  printf("--no-verify                             =   skip verification after flashing (not recommended)\n");
+	  printf("--fix-lgc-static-checksum               =   adds fixed checksum to end of data (LGC algo.)\n");
+	  printf("                                            (use when flashing modified static data)\n");
 	  printf("\n");
 	  printf("Presets:\n");
 	  printf("df1                                     =   DataFlash1 (usually dynamic data to persist between resets)\n");
@@ -177,7 +179,10 @@ int main(int argc, char **argv)
 	int c;
 	static int noVerify=0;
 	static int confirmDelete=0;
-	static int execute=0;
+
+	static int lgcChecksumFix=0;
+	static int opExecute=0;
+	static int opErase=0;
 	int opAddress=-1;
 	int opSize=-1;
 
@@ -185,7 +190,7 @@ int main(int argc, char **argv)
 	unsigned char block2[0x1FFFF];
 
 	int status;
-	int i,j;
+	int i,j,chk;
 	FILE *outFile;
 	FILE *inFile;
 
@@ -200,19 +205,22 @@ int main(int argc, char **argv)
 	        {
 	          {"confirm-delete", no_argument,       &confirmDelete, 1},
 	          {"no-verify", no_argument,       &noVerify, 1},
-	          {"execute",  no_argument, &execute,1},
+	          {"execute",  no_argument, &opExecute,1},
+		  {"erase",  no_argument,&opErase,1},
+		  {"fix-lgc-static-checksum", no_argument, &lgcChecksumFix,1},
 
 	          {"address",    required_argument, 0, 'a'},
 	          {"dump",	required_argument, 0, 'd'},
 	          {"size",    required_argument, 0, 's'},
 	          {"write",  required_argument, 0, 'w'},
+
 		  {"preset", required_argument,0,'p'},
 	          {0, 0, 0, 0}
         };
 
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "d:a:s:w:p:",
+      c = getopt_long (argc, argv, "d:a:s:w:p:e",
                        long_options, &option_index);
 
       if (c == -1)
@@ -258,7 +266,6 @@ int main(int argc, char **argv)
 
 
 	  break;
-
         case 's':
           	opSize=strtol(optarg,NULL,16);
           break;
@@ -334,8 +341,6 @@ int main(int argc, char **argv)
 			exit(0);
 		}
 
-		printf("Writing memory 0x%04x-0x%04x ...\n",opAddress,opAddress+opSize-1);
-
 		inFile = fopen(ramIn,"rb");
 
 		if (inFile != NULL) { 
@@ -351,6 +356,18 @@ int main(int argc, char **argv)
 			exit(3);
 		}
 		fread(block,opSize,1,inFile);
+
+		if (lgcChecksumFix) {
+			chk=0;
+			for(j=0;j<(opSize/4)-1;j++) {
+				chk -= *((uint32_t *)block+j);
+			}
+		
+			*((uint32_t *)block+j) = chk;
+			printf("Fixing LGC static checksum..\nDone!\n");
+		}
+
+		printf("Writing memory 0x%04x-0x%04x ...\n",opAddress,opAddress+opSize-1);
 
 		writeRam(opAddress,opSize,block);	
 
@@ -370,4 +387,22 @@ int main(int argc, char **argv)
 		fclose(inFile);		
 		
 	}
+	if (opErase) {
+		if (!confirmDelete) {
+			printf("This may erase and reprogram flash memory on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
+			exit(0);
+		}
+		printf("Erasing flash block starting at 0x%04x ...\n",opAddress);
+		if (eraseFlashBlock(opAddress)>0) {
+			printf("Done!\n");
+		} else {
+			printf("ERROR!\n");
+			exit(0);
+		}
+	}
+	if (opExecute) {
+		printf("Exiting Boot ROM and starting firmware\n");
+		SMBWriteWord(0x16,0,CMD_EXECUTE_FLASH);
+	}
+
 }

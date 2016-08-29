@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 			skipMap[0xA1] = 0xFF;   // messing with it like this can hang the device
 			printSkipMap(start,end,skipMap);
 		
-			for(i=start;i<end;i++) {
+			for(i=start;i<=end;i++) {
 				if (skipMap[i] != 0xFF) { 
 					status = SMBTestAddressACK(i);		
 					if (status< 0) printf("[%x] ERROR: %d\n",i,status);
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 		case SCAN_COMMAND:
 			printf("Scanning for commands..\n");
 			printSkipMap(start,end,skipMap);
-			for(i=start;i<end;i++) {
+			for(i=start;i<=end;i++) {
 				if (skipMap[i] != 0xFF) { 
 					status = SMBTestCommandACK(address,i);
 					if (status< 0) printf("[%x] ERROR: %d\n",i,status);
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 		case SCAN_COMMAND_WRITE:
 			printf("Scanning for command writability..\n");
 			printSkipMap(start,end,skipMap);
-			for(i=start;i<end;i++) {
+			for(i=start;i<=end;i++) {
 				if (skipMap[i] != 0xFF) {
 					status = SMBTestCommandWrite(address,i);
 					if (status< 0) {
