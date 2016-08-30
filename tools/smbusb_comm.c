@@ -42,6 +42,7 @@ void printUsage() {
 	  printf("--address=<0xaddr>    , -a <0xaddr>    =   Sets SMBus address for operation\n");
 	  printf("--command=<0xcommand> , -c <0xcommand> =   Sets SMBus command for operation\n");
 	  printf("--write=<0xdata>      , -w <0xdata>    =   Write operation\n");
+	  printf("--block-write         , -b             =   Force block-write regardless of data length\n");
 	  printf("--read=<# of bytes>   , -r <#>         =   Read operation (# of bytes determines read mode)\n");
 	  printf("--null-write          , -n             =   Start->addr->cmd->Stop\n");
 	  printf("--verbose             , -v             =   Print status messages\n");
@@ -71,6 +72,7 @@ int main(int argc, char **argv)
 {                       
 	int c;
 	static int noPec=0;
+	char forceBlockWrite=0;
 	char verbose = 0;
 	char block[1024];	
 	char block2[1024];	
@@ -99,6 +101,7 @@ int main(int argc, char **argv)
 	          {"address",  required_argument, 0, 'a'},
 	          {"command",  required_argument, 0, 'c'},
 	          {"write",    required_argument, 0, 'w'},
+		  {"block-write", no_argument, 0, 'b'},
 	          {"read",    required_argument, 0, 'r'},
 	          {"null-write",  no_argument, 0, 'n'},
 	          {"verbose",  no_argument, 0, 'v'},
@@ -108,7 +111,7 @@ int main(int argc, char **argv)
 
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "a:c:w:r:vn", //s
+      c = getopt_long (argc, argv, "a:c:w:r:vnb", //s
                        long_options, &option_index);
 
       if (c == -1)
@@ -123,7 +126,9 @@ int main(int argc, char **argv)
         case 'a':
           	opAddress = strtol(optarg,NULL,16);
           break;
-
+        case 'b':
+		forceBlockWrite=1;
+	  break;
         case 'c':
 		opCommand = strtol(optarg,NULL,16);
           break;
@@ -198,12 +203,16 @@ int main(int argc, char **argv)
 				}
 				block[i]=blockCheck;
 			}
-			hex_decode(block,strlen(block),buf);
-			if (verbose) printf("Writing %d bytes to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
+			hex_decode(block,strlen(block),buf);		
 	
-			if (strlen(block)/2==1) {
+			if ((strlen(block)/2>2) | forceBlockWrite) {				
+				if (verbose) printf("Block-Writing %d bytes to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
+				SMBWriteBlock(opAddress,opCommand,buf,strlen(block)/2);
+			} else	if (strlen(block)/2==1) {
+				if (verbose) printf("Byte-Writing %d bytes to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
 				SMBWriteByte(opAddress,opCommand,buf[0]);				
 			} else if(strlen(block)/2==2) {
+				if (verbose) printf("Word-Writing to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
 				j=*((int*)buf) & 0xFFFF;
 				j= ((j>>8) | (j<<8)) &0xFFFF;
 
@@ -215,10 +224,7 @@ int main(int argc, char **argv)
 					printf("Error %d\n",status);
 					exit(status);
 				}
-			} else {
-				SMBWriteBlock(opAddress,opCommand,buf,strlen(block)/2);
-			}
-			
+			}			
 		}		
 		
 	} else if (op==3) {
