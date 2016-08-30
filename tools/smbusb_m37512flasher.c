@@ -1,6 +1,6 @@
 /*
-* smbusb_r2j240flasher
-* Flasher tool for the R2J240 (and bootrom-compatible) chips
+* smbusb_m37512flasher
+* Flasher tool for the M37512
 *
 * Copyright (c) 2016 Viktor <github@karosium.e4ward.com>
 *
@@ -30,116 +30,129 @@
 
 #include "libsmbusb.h"
 
+#define CMD_SET_READ_ADDRESS 0xFF
+
+#define CMD_READ_BLOCK 0xFE
+
+#define CMD_WRITE_BLOCK 0x40
+#define CMD_CLEAR_BLOCK 0x20
+
+#define CMD_READ_CLEAR_STATUS_REGISTER 0x70
+
+#define CHUNKLEN 0x10
+
 #define CMD_SBS_CHEMISTRY 0x22
 
-#define CMD_READ_RAM 0xFC
+#define BLOCK_B_ADDRESS 0x1000
+#define BLOCK_B_SIZE 0x800
 
-#define CMD_WRITE_RAM 0xFD
+#define BLOCK_A_ADDRESS 0x1800
+#define BLOCK_A_SIZE 0x800
 
-#define CMD_ERASE_BLOCK 0x20 
+#define BLOCK_3_ADDRESS 0x4000
+#define BLOCK_3_SIZE 0x4000
 
-#define CMD_READ_CLEAR_STATUS_REG 0x50
+#define BLOCK_2_ADDRESS 0x8000
+#define BLOCK_2_SIZE 0x4000
 
-#define CMD_EXECUTE_FLASH 0xD001
+#define BLOCK_1_ADDRESS 0xC000
+#define BLOCK_1_SIZE 0x2000
 
-#define FIRMWARE_ADDRESS 0x4000
-#define FIRMWARE_SIZE 0x8000
+#define BLOCK_0_ADDRESS 0xE000
+#define BLOCK_0_SIZE 0x2000
 
-#define DATAFLASH1_ADDRESS 0x3000
-#define DATAFLASH1_SIZE 0x400
+int readClearStatusRegister() {
+	return SMBReadByte(0x16,CMD_READ_CLEAR_STATUS_REGISTER);
+}
 
-#define DATAFLASH2_ADDRESS 0x3400
-#define DATAFLASH2_SIZE 0x400
-
-#define DATAFLASH3_ADDRESS 0xC000
-#define DATAFLASH3_SIZE 0x2000
-
-
-int eraseFlashBlock(unsigned int address) {
+int eraseFlashBlock(int address) {
 	int status;
-	unsigned char block[3];
+	unsigned char setAddr[2];
 
-	block[0]=address&0xFF;
-	block[1]=(address>>8)&0xFF;
-	block[2]=(address>>16)&0xFF;
-	status = SMBWriteBlock(0x16,CMD_ERASE_BLOCK,block,3);
-	if (status<0) return status;
-	sleep(1);
-	status = SMBReadWord(0x16,CMD_READ_CLEAR_STATUS_REG);
+	setAddr[0] = (address >> 8) & 0xFF;	// flipping byte order is fun (thought the designers)
+	setAddr[1] = address & 0xFF;
+
+	status = SMBWriteBlock(0x16,CMD_CLEAR_BLOCK,setAddr,2);
+	if (status>=0) {
+		sleep(1);
+		readClearStatusRegister();
+	}
+
 	return status;
+
+
 }
 
-
-int readRam(int address, unsigned int size, unsigned char *buf) {
+int readFlash(int address, int len, unsigned char* buf) {
 	int status,i;
-	unsigned char block[0xFF];
+	unsigned char chunk[CHUNKLEN];
+	unsigned char setAddr[2];
 
-	block[0]=0x16;
-	block[1]=CMD_READ_RAM;
-	block[2]=address&0xFF;
-	block[3]=(address>>8)&0xFF;
-	block[4]=(address>>16)&0xFF;
-	block[5]=size&0xFF;
-	block[6]=(size>>8)&0xFF;
-	status= SMBWrite(1,0,0,block,7);
-	if (status <0) return status;
+	if (len % CHUNKLEN !=0) return -99;
 
-	block[0]=0x17;
-	status= SMBWrite(0,1,0,block,1);
+	for (i=0;i<len/CHUNKLEN;i++) {
+		setAddr[0] = (address+i*CHUNKLEN) & 0xFF;    	
+		setAddr[1] = ((address+i*CHUNKLEN) >> 8) & 0xFF;	
+
+		status=SMBWriteBlock(0x16,CMD_SET_READ_ADDRESS,setAddr,2);
+		if (status != 2) return -1;
+
+		status=SMBReadBlock(0x16,CMD_READ_BLOCK,chunk);		
+
+		if (status != CHUNKLEN) return status;
+		memcpy((buf+(i*CHUNKLEN)),chunk,CHUNKLEN);
+	}	
 	
-	return SMBRead(size,buf,1);
+	return len;
 }
-
-int writeRam(int address, unsigned int size, unsigned char *buf) {
+int writeFlash(int address, int len, unsigned char* buf) {
 	int status,i;
-	unsigned char block[0xFF];
+	unsigned char chunk[CHUNKLEN+2];
 
-	block[0]=0x16;
-	block[1]=CMD_WRITE_RAM;
-	block[2]=address&0xFF;
-	block[3]=(address>>8)&0xFF;
-	block[4]=(address>>16)&0xFF;
-	block[5]=size&0xFF;
-	block[6]=(size>>8)&0xFF;
-	status= SMBWrite(1,0,0,block,7);
+	if (len % CHUNKLEN !=0) return -99;
 
-	if (status <0) return status;
+	for (i=0;i<len/CHUNKLEN;i++) {
+		memcpy(chunk+2,buf+(i*CHUNKLEN),CHUNKLEN);
 
-	status= SMBWrite(0,0,1,buf,size);
+		chunk[0] = (address+(i*CHUNKLEN)) & 0xFF;
+		chunk[1] = ((address+(i*CHUNKLEN)) >> 8) & 0xFF;	
+
+		readClearStatusRegister();
+		status=SMBWriteBlock(0x16,CMD_WRITE_BLOCK,chunk,CHUNKLEN+2);		
+		usleep(2000);
+
+		if (status != CHUNKLEN+2) return status;		
+	}	
 	
-	return status;
-	
+	return len;
 }
+
 
 void printHeader() {
 
 	  printf("------------------------------------\n");
-	  printf("        smbusb_r2j240flasher\n");
+	  printf("        smbusb_m37512flasher\n");
  	  printf("------------------------------------\n");
 }
+
 void printUsage() {
 	  printHeader();
 	  printf("options:\n");
-	  printf("--dump=<file> ,  -d <file>              =   dump the ram (or flash, which is mapped in ram) to <file>\n");
-	  printf("--write=<file> ,   -w <file>            =   write the <file> to the ram (or flash)\n");
+	  printf("--dump=<file> ,  -d <file>              =   dump the flash to <file>\n");
+	  printf("--write=<file> ,   -w <file>            =   write the <file> to the flash\n");
 	  printf("--erase                                 =   just erase the flash block\n");
 	  printf("--address=0x<addr> , -a 0x<addr>        =   ram address from which read or write starts\n");
 	  printf("--size=0x<size> ,  -s 0x<size>          =   size of data to read or write\n");
 	  printf("--preset=<preset> , -p <preset>         =   sets address and size based on a preset, see below.\n");
-	  printf("--execute                               =   exit the Boot ROM and execute firmware\n");
 	  printf("--no-verify                             =   skip verification after flashing (not recommended)\n");
-	  printf("--fix-lgc-static-checksum               =   adds fixed checksum to end of data (LGC algo.)\n");
-	  printf("                                            (use when flashing modified static data)\n");
 	  printf("\n");
 	  printf("Presets:\n");
-	  printf("df1                                     =   DataFlash1 (usually dynamic data to persist between resets)\n");
-	  printf("df2                                     =   DataFlash2 (usually dynamic data to persist between resets)\n");
-	  printf("df3                                     =   DataFlash3 (usually static data)\n");
-	  printf("fw                                      =   The firmware\n");
-	  printf("full1                                   =   0-FFFF first half of a full dump\n");
-	  printf("full2                                   =   10000-11FFF second half of full dump\n");
-	  printf("                                            Note: this is probably the boot rom and is unwritable\n");
-	  printf("                                                  full1 will be enough for most puproses\n");
+	  printf("bb                                      =   Data Block B\n");
+	  printf("ba                                      =   Data Block A\n");
+	  printf("b3                                      =   Block 3\n");
+	  printf("b2                                      =   Block 2\n");
+	  printf("b1                                      =   Block 1\n");
+	  printf("b0                                      =   Block 0\n");
 	 
 
 }
@@ -181,8 +194,6 @@ int main(int argc, char **argv)
 	static int noVerify=0;
 	static int confirmDelete=0;
 
-	static int lgcChecksumFix=0;
-	static int opExecute=0;
 	static int opErase=0;
 	int opAddress=-1;
 	int opSize=-1;
@@ -206,9 +217,7 @@ int main(int argc, char **argv)
 	        {
 	          {"confirm-delete", no_argument,       &confirmDelete, 1},
 	          {"no-verify", no_argument,       &noVerify, 1},
-	          {"execute",  no_argument, &opExecute,1},
-		  {"erase",  no_argument,&opErase,1},
-		  {"fix-lgc-static-checksum", no_argument, &lgcChecksumFix,1},
+		  {"erase",  no_argument,&opErase,1},		  
 
 	          {"address",    required_argument, 0, 'a'},
 	          {"dump",	required_argument, 0, 'd'},
@@ -245,24 +254,24 @@ int main(int argc, char **argv)
           	ramIn=optarg;
           break;
 	case 'p':
-		if (strcmp(optarg,"df1")==0) {
-			opAddress=DATAFLASH1_ADDRESS;
-			opSize=DATAFLASH1_SIZE;
-		} else if (strcmp(optarg,"df2")==0) {
-			opAddress=DATAFLASH2_ADDRESS;
-			opSize=DATAFLASH2_SIZE;
-		} else if (strcmp(optarg,"df3")==0) {
-			opAddress=DATAFLASH3_ADDRESS;
-			opSize=DATAFLASH3_SIZE;
-		} else if (strcmp(optarg,"full1")==0) {
-			opAddress=0;
-			opSize=0x10000;
-		} else if (strcmp(optarg,"full2")==0) {
-			opAddress=0x10000;
-			opSize=0x2000;
-		} else if (strcmp(optarg,"fw")==0) {
-			opAddress=FIRMWARE_ADDRESS;
-			opSize=FIRMWARE_SIZE;
+		if (strcmp(optarg,"bb")==0) {
+			opAddress=BLOCK_B_ADDRESS;
+			opSize=BLOCK_B_SIZE;
+		} else if (strcmp(optarg,"ba")==0) {
+			opAddress=BLOCK_A_ADDRESS;
+			opSize=BLOCK_A_SIZE;
+		} else if (strcmp(optarg,"b3")==0) {
+			opAddress=BLOCK_3_ADDRESS;
+			opSize=BLOCK_3_SIZE;
+		} else if (strcmp(optarg,"b2")==0) {
+			opAddress=BLOCK_2_ADDRESS;
+			opSize=BLOCK_2_SIZE;
+		} else if (strcmp(optarg,"b1")==0) {
+			opAddress=BLOCK_1_ADDRESS;
+			opSize=BLOCK_1_SIZE;
+		} else if (strcmp(optarg,"b0")==0) {
+			opAddress=BLOCK_0_ADDRESS;
+			opSize=BLOCK_0_SIZE;
 		}
 
 
@@ -289,7 +298,7 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	SMBEnablePEC(0); // Renesas BootROM does not support PEC :(
+	SMBEnablePEC(0);  // Renesas BootROM does not support PEC :(
 
 	memset(block,0,255);			
 	status = SMBReadBlock(0x16,CMD_SBS_CHEMISTRY,block); // read SBS Chemistry.. should return "LION" if running firmware
@@ -308,6 +317,11 @@ int main(int argc, char **argv)
 			printf("Address or size missing for operation.\n");
 			exit(2);
 		}
+		if (opSize % CHUNKLEN !=0) {
+			printf("Size must be multiple of %d\n",CHUNKLEN);
+			exit(2);
+		}
+
 		printf("Dumping memory 0x%04x-0x%04x ...\n",opAddress,opAddress+opSize-1);
 		outFile=fopen(ramOut,"wb");
 		if (outFile == NULL) {
@@ -315,12 +329,12 @@ int main(int argc, char **argv)
 			exit(3);
 		}
 
-		status=readRam(opAddress,opSize,block);
+		status=readFlash(opAddress,opSize,block);
 		
 		if (status >0) {			
 			printf("Done!\n");
 		} else {
-			printf("Error %d\n",status);
+			printf("Read Error %d\n",status);
 		}
 
 		fwrite(block,opSize,1,outFile);
@@ -329,9 +343,14 @@ int main(int argc, char **argv)
 		
 	}
 	
-	if (ramIn !=NULL) {
+	if (ramIn !=NULL) {		
+		if (opSize % CHUNKLEN !=0) {
+			printf("Size must be multiple of %d\n",CHUNKLEN);
+			exit(2);
+		}
+
 		if (!confirmDelete) {
-			printf("This may erase and reprogram flash memory on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
+			printf("This will erase and reprogram flash memory on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
 			exit(0);
 		}
 
@@ -349,19 +368,11 @@ int main(int argc, char **argv)
 			printf("Error opening input file\n");
 			exit(3);
 		}
+
 		fread(block,opSize,1,inFile);
 
-		if (lgcChecksumFix) {
-			chk=0;
-			for(j=0;j<(opSize/4)-1;j++) {
-				chk -= *((uint32_t *)block+j);
-			}
-		
-			*((uint32_t *)block+j) = chk;
-			printf("Fixing LGC static checksum..\nDone!\n");
-		}
-
 		printf("Erasing flash block starting at 0x%04x ...\n",opAddress);
+
 		if (eraseFlashBlock(opAddress)>0) {
 			printf("Done!\n");
 		} else {
@@ -369,10 +380,8 @@ int main(int argc, char **argv)
 			exit(0);
 		}
 
-
 		printf("Writing memory 0x%04x-0x%04x ...\n",opAddress,opAddress+opSize-1);
-
-		status = writeRam(opAddress,opSize,block);	
+		status=writeFlash(opAddress,opSize,block);
 
 		if (status>0) {
 			fprintf(stderr,"Done!\n");
@@ -381,12 +390,15 @@ int main(int argc, char **argv)
 
 		}
 
-
-		fprintf(stderr,"Done!\n");
-
 		if (!noVerify) {
 			printf("Verifying 0x%04x-0x%04x ...\n",opAddress,opAddress+opSize-1);
-			readRam(opAddress,opSize,block2);
+			status = readFlash(opAddress,opSize,block2);
+			if (status < 0) {
+				printf("Read ERROR %d\n",status);
+				exit(0);
+			}
+
+
 			if (i=memcmp(block,block2,opSize) == 0) {
 					printf("Verified OK!\n");
 
@@ -400,7 +412,7 @@ int main(int argc, char **argv)
 	}
 	if (opErase) {
 		if (!confirmDelete) {
-			printf("This may erase and reprogram flash memory on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
+			printf("This will erase flash memory on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
 			exit(0);
 		}
 		printf("Erasing flash block starting at 0x%04x ...\n",opAddress);
@@ -411,9 +423,5 @@ int main(int argc, char **argv)
 			exit(0);
 		}
 	}
-	if (opExecute) {
-		printf("Exiting Boot ROM and starting firmware\n");
-		SMBWriteWord(0x16,0,CMD_EXECUTE_FLASH);
-	}
-
 }
+

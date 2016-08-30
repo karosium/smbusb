@@ -377,10 +377,6 @@ int main(int argc, char **argv)
 			printf("This will erase and reprogram the eeprom(data) flash on the microcontroller.\nIf you're sure add --confirm_delete and try again.\n");
 			exit(0);
 		}
-		printf("Erasing eeprom(data) flash\n");
-		eraseEepromFlash();
-		printf("Done\n");
-		printf("Flashing eeprom(data) flash\n");
 
 		inFile = fopen(eepromIn,"rb");
 
@@ -396,6 +392,11 @@ int main(int argc, char **argv)
 			printf("Error opening input file");
 			exit(3);
 		}
+
+		printf("Erasing eeprom(data) flash\n");
+		eraseEepromFlash();
+		printf("Done\n");
+		printf("Flashing eeprom(data) flash\n");
 	
 		for (i=0;i<EEPROM_BLOCK_COUNT;i++) {
 			fread(block,EEPROM_BLOCKSZ,1,inFile);
