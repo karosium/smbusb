@@ -29,13 +29,10 @@ if not exist libusb (
 	
 	echo Building libsmbusb
 	
-	copy -y firmware\firmware.h lib\ >nul
+	copy /y firmware\firmware.h lib\ >nul
 
 	cd lib
 	build.bat
-	if ERRORLEVEL 0 (
-		echo Library built successfully
-	)
 
 	echo Building tools
 	cd ..\tools
