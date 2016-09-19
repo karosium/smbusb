@@ -1,5 +1,5 @@
 @echo off
-gcc -L../lib -I../lib smbusb_scan.c -o smbusb_scan.exe -lsmbusbb
+gcc -L../lib -I../lib smbusb_scan.c -o smbusb_scan.exe -lsmbusb
 if %ERRORLEVEL% GTR 0 goto tool_build_err
 gcc -L../lib -I../lib smbusb_sbsreport.c -o smbusb_sbsreport.exe -lsmbusb
 if %ERRORLEVEL% GTR 0 goto tool_build_err
