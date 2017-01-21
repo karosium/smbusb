@@ -374,7 +374,7 @@ int main(int argc, char **argv)
 
 	if (eepromIn !=NULL) {
 		if (!confirmDelete) {
-			printf("This will erase and reprogram the eeprom(data) flash on the microcontroller.\nIf you're sure add --confirm_delete and try again.\n");
+			printf("This will erase and reprogram the eeprom(data) flash on the microcontroller.\nIf you're sure add --confirm-delete and try again.\n");
 			exit(0);
 		}
 
