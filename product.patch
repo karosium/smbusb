@@ -1,0 +1,20 @@
+diff --git a/lib/fx2.mk b/lib/fx2.mk
+index d876a6d..c404ce0 100644
+--- a/lib/fx2.mk
++++ b/lib/fx2.mk
+@@ -41,11 +41,11 @@ VID?=0x04b4
+ PID?=0x8613
+ 
+ INCLUDES?=""
+-DSCR_AREA?=-Wl"-b DSCR_AREA=0x3e00"
+-INT2JT?=-Wl"-b INT2JT=0x3f00"
+-CODE_SIZE?=--code-size 0x3c00
++DSCR_AREA?=-Wl"-b DSCR_AREA=0x1e00"
++INT2JT?=-Wl"-b INT2JT=0x1f00"
++CODE_SIZE?=--code-size 0x1c00
+ XRAM_SIZE?=--xram-size 0x0200
+-XRAM_LOC?=--xram-loc 0x3c00
++XRAM_LOC?=--xram-loc 0x1c00
+ BUILDDIR?=build
+ 
+ FX2LIBDIR?=$(dir $(lastword $(MAKEFILE_LIST)))../
