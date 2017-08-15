@@ -37,7 +37,3 @@ On Windows:
 ``` 
 build.bat
 ```
-
-### Notes
-
-* If you're not using the development board then you may have to apply the included product.patch to fx2lib for it to work.
