@@ -34,6 +34,8 @@ AC_HEADER_STDC
 AC_C_CONST
 AC_TYPE_SIZE_T
 
+AC_CHECK_FILE(fx2lib/Makefile, , [AC_MSG_ERROR(fx2lib is missing. did you run 'git submodule update' after cloning?)])
+
 # settings
 
 SMB_CONF_DIRS=lib
@@ -66,6 +68,8 @@ AS_IF([test "x$enable_tools" != "xno"], [
   SMB_CONF_DIRS="$SMB_CONF_DIRS tools"
   AC_CONFIG_FILES([tools/Makefile])
 ])
+
+AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib.patch -sN]
 
 AC_SUBST(SMB_CONF_DIRS)
 
