@@ -17,4 +17,4 @@ index d876a6d..c404ce0 100644
 +XRAM_LOC?=--xram-loc 0x1c00
  BUILDDIR?=build
  
-FX2LIBDIR?=$(dir $(lastword $(MAKEFILE_LIST)))../
+ FX2LIBDIR?=$(dir $(lastword $(MAKEFILE_LIST)))../

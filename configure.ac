@@ -34,7 +34,7 @@ AC_HEADER_STDC
 AC_C_CONST
 AC_TYPE_SIZE_T
 
-AC_CHECK_FILE(fx2lib/Makefile, , [AC_MSG_ERROR(fx2lib is missing. did you run 'git submodule update' after cloning?)])
+AC_CHECK_FILE(fx2lib/Makefile, , [AC_MSG_ERROR(fx2lib is missing. did you run 'git submodule init' and 'git submodule update' after cloning?)])
 
 # settings
 
