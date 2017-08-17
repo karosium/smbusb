@@ -30,11 +30,18 @@
 
 #include "libsmbusb.h"
 
+typedef struct {
+    unsigned char unknown_0[4];
+    unsigned short cell_voltage[4];
+    unsigned char unknown_1[2];
+} lenovo_data_t __attribute__ ((aligned (1)));
+
 int main(int argc, char*argv[])
 {
 	int status;
 	int i;
 	unsigned char *block = malloc(256);
+    int size = 0;
 
 	unsigned char *tempStr = malloc(256);
 	unsigned int tempWord;
@@ -50,7 +57,7 @@ int main(int argc, char*argv[])
 
 	printf("-------------------------------------------------\n");
 
-	
+
 	memset(tempStr,0,256);
 	if (SMBReadBlock(0x16,0x20,tempStr) <=0) strcpy(tempStr,"ERROR");
 
@@ -70,15 +77,15 @@ int main(int argc, char*argv[])
 	printf("Manufacture Date:	    %u.%02u.%02u\n",1980+(tempWord>>9),
 						     	tempWord>>5&0xF,
 							tempWord&0x1F);
-	
+
 	printf("\n");
-	printf("Manufacturer Access:        %04x\n",SMBReadWord(0x16,0x00));	
+	printf("Manufacturer Access:        %04x\n",SMBReadWord(0x16,0x00));
 
 	printf("Remaining Capacity Alarm:   %u mAh(/10mWh)\n",SMBReadWord(0x16,0x01));
 
 	printf("Remaining Time Alarm:       %u min\n",SMBReadWord(0x16,0x02));
 
-	printf("Battery Mode:               %04x\n",SMBReadWord(0x16,0x03));	
+	printf("Battery Mode:               %04x\n",SMBReadWord(0x16,0x03));
 
 
 	printf("At Rate:                    %d mAh(/10mWh)\n",SMBReadWord(0x16,0x04));
@@ -105,7 +112,19 @@ int main(int argc, char*argv[])
 	printf("Charging Voltage:           %u mV\n",SMBReadWord(0x16,0x15));
 	printf("Cycle Count:                %u\n",SMBReadWord(0x16,0x17));
 
-	printf("Manufacturer Data:          %x\n",SMBReadWord(0x16,0x23));
-
-
+	memset(block, 0, 256);
+    size = SMBReadBlock(0x16, 0x23, block);
+	if (size < sizeof(lenovo_data_t)) {
+        printf("Manufacturer Data: ");
+        for (i = 0; i < size; i++) {
+            printf("%02x ", block[i]);
+        }
+        printf("\n");
+    } else {
+        lenovo_data_t *lenovo_data = (lenovo_data_t*)block;
+        for (i = 0; i < 4; i++) {
+            printf("Cell %d voltage:             %u mV\n", i,
+                    lenovo_data->cell_voltage[3-i]);
+        }
+    }
 }
