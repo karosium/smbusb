@@ -98,8 +98,8 @@ int main(int argc, char*argv[])
 	printf("Temperature:                %02.02f degC\n",(float)((SMBReadWord(0x16,0x08)*0.1)-273.15)); // unit: 0.1Kelvin
 
 	printf("Voltage:                    %u mV\n",SMBReadWord(0x16,0x09));
-	printf("Current:                    %u mA\n",SMBReadWord(0x16,0x0a));
-	printf("Average Current:            %u mA\n",SMBReadWord(0x16,0x0b));
+	printf("Current:                    %d mA\n", (int16_t)SMBReadWord(0x16, 0x0a));
+	printf("Average Current:            %d mA\n", (int16_t)SMBReadWord(0x16, 0x0b));
 	printf("Max Error:                  %u %%\n",SMBReadWord(0x16,0x0c));
 	printf("Relative State Of Charge    %u %%\n",SMBReadWord(0x16,0x0d));
 	printf("Absolute State Of Charge    %u %%\n",SMBReadWord(0x16,0x0e));
