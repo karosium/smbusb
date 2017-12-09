@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 	char block[1024];	
 	char block2[1024];	
 
-	char buf[256];
+	unsigned char buf[256];
 	char blockCheck;
 
 	int op=0;
