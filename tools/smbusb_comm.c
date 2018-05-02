@@ -207,7 +207,12 @@ int main(int argc, char **argv)
 	
 			if ((strlen(block)/2>2) | forceBlockWrite) {				
 				if (verbose) printf("Block-Writing %d bytes to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
-				SMBWriteBlock(opAddress,opCommand,buf,strlen(block)/2);
+				status = SMBWriteBlock(opAddress,opCommand,buf,strlen(block)/2);
+				if (status==strlen(block)/2) {
+					if (verbose) printf("OK, status = %d;\n", status);
+					} else if (status>=0 && status!=strlen(block)/2) {
+						printf(" (!) status = %d; (not equalled to data length of %d bytes)\n", status, strlen(block)/2);
+						} else if (status<0) {  printf("Error %d\n", status); }
 			} else	if (strlen(block)/2==1) {
 				if (verbose) printf("Byte-Writing %d bytes to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
 				SMBWriteByte(opAddress,opCommand,buf[0]);				
