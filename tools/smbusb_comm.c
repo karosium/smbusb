@@ -207,24 +207,25 @@ int main(int argc, char **argv)
 	
 			if ((strlen(block)/2>2) | forceBlockWrite) {				
 				if (verbose) printf("Block-Writing %d bytes to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
-				SMBWriteBlock(opAddress,opCommand,buf,strlen(block)/2);
+				status = SMBWriteBlock(opAddress,opCommand,buf,strlen(block)/2);
 			} else	if (strlen(block)/2==1) {
-				if (verbose) printf("Byte-Writing %d bytes to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
-				SMBWriteByte(opAddress,opCommand,buf[0]);				
+				if (verbose) printf("Byte-Writing to addr 0x%02x cmd 0x%02x\n",opAddress,opCommand);
+				status = SMBWriteByte(opAddress,opCommand,buf[0]);				
 			} else if(strlen(block)/2==2) {
-				if (verbose) printf("Word-Writing to addr 0x%02x cmd 0x%02x\n",strlen(block)/2,opAddress,opCommand);
+				if (verbose) printf("Word-Writing to addr 0x%02x cmd 0x%02x\n",opAddress,opCommand);
 				j=*((int*)buf) & 0xFFFF;
 				j= ((j>>8) | (j<<8)) &0xFFFF;
-
-				status = SMBWriteWord(opAddress,opCommand,j);
-				if (status >=0) {
-					if (verbose) printf("OK\n");
-					exit(0);
-				} else {
-					printf("Error %d\n",status);
-					exit(status);
-				}
+				status = SMBWriteWord(opAddress,opCommand,j);				
 			}			
+			
+			if (status >=0) {
+				if (verbose) printf("OK\n");
+				exit(0);
+			} else {
+				printf("Error %d\n",status);
+				exit(status);
+			}
+			
 		}		
 		
 	} else if (op==3) {
