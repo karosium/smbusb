@@ -93,7 +93,7 @@ int writeProgramBlock(int blockNr, unsigned char* buf) {
 
         status = SMBWriteBlock(0x16,CMD_WRITE_PROGRAM_BLOCK,block,0x62);
 	usleep(2000);	
-	return status-2;
+	return (status > 0 ? status-2 : status);
 }
 
 int writeEepromBlock(unsigned char blockNr, unsigned char* buf) {
@@ -105,7 +105,7 @@ int writeEepromBlock(unsigned char blockNr, unsigned char* buf) {
 
         status = SMBWriteBlock(0x16,CMD_WRITE_EEPROM_BLOCK,block,33);
 	usleep(2000);	
-	return status-1;
+	return (status > 0 ? status-1 : status);
 }
 
 
