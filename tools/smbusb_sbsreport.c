@@ -110,6 +110,7 @@ int main(int argc, char*argv[])
 	printf("Average Time To Full:       %u min\n",SMBReadWord(0x16,0x13));
 	printf("Charging Current:           %u mA\n",SMBReadWord(0x16,0x14));
 	printf("Charging Voltage:           %u mV\n",SMBReadWord(0x16,0x15));
+	printf("Battery Status:             %04x\n",SMBReadWord(0x16,0x16));
 	printf("Cycle Count:                %u\n",SMBReadWord(0x16,0x17));
 
 	memset(block, 0, 256);
