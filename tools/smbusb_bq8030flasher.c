@@ -55,7 +55,7 @@
 
 #define PROGRAM_BLOCK_COUNT 768
 #define EEPROM_BLOCK_COUNT 64
-#define EEPROM_RESERVED_BYTES 32
+#define EEPROM_RESERVED_BYTES 64
 
 void eraseProgramFlash() {
 	SMBWriteWord(0x16,CMD_ERASE_PROGRAM_FLASH,DATA_ERASE_CONFIRM);
@@ -398,7 +398,7 @@ int main(int argc, char **argv)
 		printf("Done\n");
 		printf("Flashing eeprom(data) flash\n");
 	
-		for (i=0;i<EEPROM_BLOCK_COUNT;i++) {
+		for (i=0;i<EEPROM_BLOCK_COUNT-(EEPROM_RESERVED_BYTES/EEPROM_BLOCKSZ);i++) {
 			fread(block,EEPROM_BLOCKSZ,1,inFile);
 			status=writeEepromBlock(i,block);
 			if (status != EEPROM_BLOCKSZ) {
@@ -413,14 +413,14 @@ int main(int argc, char **argv)
 		if (!noVerify) {
 			printf("Verifying\n");
 			rewind(inFile);
-			for (i=0;i<EEPROM_BLOCK_COUNT;i++) {
+			for (i=0;i<EEPROM_BLOCK_COUNT-(EEPROM_RESERVED_BYTES/EEPROM_BLOCKSZ);i++) {
 				fread(block,EEPROM_BLOCKSZ,1,inFile);
 				status=readEepromBlock(i,block2);				
 				if (status != EEPROM_BLOCKSZ) {
 					printf("Error:%d\n",status);
 					exit(2);
 				}
-				if (memcmp(block,block2,EEPROM_BLOCKSZ-EEPROM_RESERVED_BYTES) == 0) {
+				if (memcmp(block,block2,EEPROM_BLOCKSZ) == 0) {
 					fprintf(stderr,".");
 				} else {
 					printf("Block verify fail. Block #%d\n",i);
