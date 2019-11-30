@@ -2,7 +2,9 @@ LDADD = ../lib/libsmbusb.la
 
 AM_CFLAGS = -I../lib
 
-bin_PROGRAMS=smbusb_sbsreport smbusb_bq8030flasher smbusb_r2j240flasher smbusb_m37512flasher smbusb_scan smbusb_comm
+bin_PROGRAMS=smbusb_bootstrap smbusb_sbsreport smbusb_bq8030flasher smbusb_r2j240flasher smbusb_m37512flasher smbusb_scan smbusb_comm
+
+smbusb_bootstrap_SOURCES=smbusb_bootstrap.c
 
 smbusb_sbsreport_SOURCES=smbusb_sbsreport.c
 

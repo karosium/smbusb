@@ -60,7 +60,7 @@ int InitDevice(){
 	if (SMBInterfaceID() != 0x4d5355) 
 	{
 		// try loading firmware
-		if (CypressUploadIhxFirmware(device, (char *)&build_smbusb_firmware_ihx, build_smbusb_firmware_ihx_len) <0) return ERR_FIRMWARE_DOWNLOAD;
+		if ((status = CypressUploadIhxFirmware(device, (char *)&build_smbusb_firmware_ihx, build_smbusb_firmware_ihx_len)) <0) return status;
 		sleep(2);	
 		return INIT_RETRY;
 	}
@@ -73,7 +73,7 @@ int InitDevice(){
 					(void*)&fwver, 
 					3, 
 					1000);
-  	if (status==3) {return fwver;} else {return ERR_FIRMWARE_DOWNLOAD;}
+  	if (status==3) {return fwver;} else {return status;}
 }
 
 int SMBOpenDeviceVIDPID(unsigned int vid,unsigned int pid){
@@ -84,7 +84,7 @@ int SMBOpenDeviceVIDPID(unsigned int vid,unsigned int pid){
 	status = libusb_init(NULL);
 	if (status < 0) {
 		logerror("libusb_init() failed: %s\n", libusb_error_name(status));
-		return -1;
+		return status;
 	}
 	libusb_set_debug(NULL, 0);
 	
@@ -107,7 +107,7 @@ int SMBOpenDeviceBusAddr(unsigned int bus, unsigned int addr){
 	status = libusb_init(NULL);
 	if (status < 0) {
 		logerror("libusb_init() failed: %s\n", libusb_error_name(status));
-		return -1;
+		return status;
 	}
 	libusb_set_debug(NULL, 0);
 
@@ -115,7 +115,7 @@ int SMBOpenDeviceBusAddr(unsigned int bus, unsigned int addr){
 	openbusadd_retry:
 	if (libusb_get_device_list(NULL, &devs) < 0) {
 		logerror("libusb_get_device_list() failed: %s\n", libusb_error_name(status));
-		return ERR_DEVICE_OPEN;
+		return status;
 	}
 	for (i=0; (dev=devs[i]) != NULL; i++) {
 		if ((libusb_get_bus_number(dev) == bus) && (libusb_get_device_address(dev) == addr)) {
@@ -123,7 +123,7 @@ int SMBOpenDeviceBusAddr(unsigned int bus, unsigned int addr){
 			libusb_free_device_list(devs, 1);
 			if (status < 0) {
 				logerror("libusb_open() failed: %s\n", libusb_error_name(status));
-				return -2;
+				return status;
 			}				
 			status = InitDevice();
 			if (status == INIT_RETRY) goto openbusadd_retry;
@@ -508,4 +508,43 @@ int SMBTestCommandWrite(unsigned int address, unsigned char command){
 
 void SMBSetDebugLogFunc(void *logFunc) {
 	extLogFunc = logFunc;
+}
+
+const char* SMBGetErrorString(int errorCode) {
+	char* errorMsgBuf = malloc(128);
+	switch (errorCode) {
+		case LIBUSB_ERROR_INVALID_PARAM:
+			return "libusb error: Invalid parameter";
+		case LIBUSB_ERROR_ACCESS:
+			return "libusb error: Access denied (insufficient permissions?)";
+		case LIBUSB_ERROR_NO_DEVICE:
+			return "libusb error: No such device (it may have been disconnected)";
+		case LIBUSB_ERROR_NOT_FOUND:
+			return "libusb error: Entity not found";
+		case LIBUSB_ERROR_BUSY:
+			return "libusb error: Resource busy";
+		case LIBUSB_ERROR_TIMEOUT:
+			return "libusb error: Operation timed out";
+		case LIBUSB_ERROR_OVERFLOW:
+			return "libusb error: Overflow";
+		case LIBUSB_ERROR_PIPE:
+			return "libusb error: Pipe error";
+		case LIBUSB_ERROR_INTERRUPTED:
+			return "libusb error: System call interrupted (perhaps due to signal)";
+		case LIBUSB_ERROR_NO_MEM:
+			return "libusb error: Insufficient memory";
+		case LIBUSB_ERROR_NOT_SUPPORTED:
+			return "libusb error: Operation not supported or unimplemented on this platform";
+		case LIBUSB_ERROR_OTHER:
+			return "libusb error: Other error";
+		case ERR_DEVICE_OPEN:
+			return "Unable to open device. (insufficient permissions? connection issue?)";
+		case ERR_ALREADY_OPEN:
+			return "Device already in use";
+		case ERR_CLAIM_INTERFACE:
+			return "Unable to claim interface (insufficient permissions?)";
+		default:	
+			sprintf(errorMsgBuf,"Unknown libusb error code (%d)",errorCode);		
+			return (const char*)errorMsgBuf;
+	}
 }

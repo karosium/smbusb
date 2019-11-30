@@ -92,7 +92,8 @@ int writeProgramBlock(int blockNr, unsigned char* buf) {
 	memcpy(block+2,buf,0x60);
 
         status = SMBWriteBlock(0x16,CMD_WRITE_PROGRAM_BLOCK,block,0x62);
-	usleep(2000);	
+	usleep(200000);
+
 	return (status > 0 ? status-2 : status);
 }
 
@@ -130,13 +131,14 @@ void printHeader() {
 void printUsage() {
 	  printHeader();
 	  printf("options:\n");
-	  printf("--save-program=<file> ,  -p <file>      =   save the chip's program flash to <file>\n");
-	  printf("--save-eeprom=<file> ,   -e <file>      =   save the chip's eeprom(data) flash to <file>\n");
-	  printf("--flash-program=<file> , -f <file>      =   flash the <file> to the chip's program flash\n");
-	  printf("--flash-eeprom=<file> ,  -w <file>      =   flash the <file> to the chip's eeprom(data) flash\n");
-	  printf("--execute                               =   exit the Boot ROM and execute program flash\n");
-	  printf("--no-verify                             =   skip verification after flashing (not recommended)\n");
-	  printf("--no-pec                                =   disable SMBus Packet Error Checking (not recommended)\n");
+	  printf("--save-program=<file> ,  -p <file>          =   save the chip's program flash to <file>\n");
+	  printf("--save-eeprom=<file> ,   -e <file>          =   save the chip's eeprom(data) flash to <file>\n");
+	  printf("--flash-program=<file> , -f <file>          =   flash the <file> to the chip's program flash\n");
+	  printf("--flash-eeprom=<file> ,  -w <file>          =   flash the <file> to the chip's eeprom(data) flash\n");
+
+	  printf("--execute                                   =   exit the Boot ROM and execute program flash\n");
+	  printf("--no-verify                                 =   skip verification after flashing (not recommended)\n");
+	  printf("--no-pec                                    =   disable SMBus Packet Error Checking (not recommended)\n");
 }
 
 int main(int argc, char **argv)
@@ -155,6 +157,7 @@ int main(int argc, char **argv)
 
 	int status;
 	int i,j;
+
 	FILE *outFile;
 	FILE *inFile;
 
@@ -227,10 +230,10 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if ((status = SMBOpenDeviceVIDPID(0x04b4,0x8613)) >0) {
+	if ((status = SMBOpenDeviceVIDPID(SMB_DEFAULT_VID,SMB_DEFAULT_PID)) >0) {
 		printf("SMBusb Firmware Version: %d.%d.%d\n",status&0xFF,(status >>8)&0xFF,(status >>16)&0xFF);
 	} else {
-		printf("Error Opening SMBusb: libusb error %d\n",status);
+		printf("Error: %s\n",SMBGetErrorString(status));
 		exit(0);
 	}
 
@@ -277,7 +280,7 @@ int main(int argc, char **argv)
 		for (i=0;i<PROGRAM_BLOCK_COUNT;i++) {
 			status=readProgramBlock(i,block);
 			if (status != PROGRAM_BLOCKSZ) {
-				printf("Error:%d\n",status);
+				printf("Error: %s\n",SMBGetErrorString(status));
 				exit(2);
 			}
 			fwrite(block,PROGRAM_BLOCKSZ,1,outFile);
@@ -299,7 +302,7 @@ int main(int argc, char **argv)
 		for (i=0;i<EEPROM_BLOCK_COUNT;i++) {
 			status=readEepromBlock(i,block);
 			if (status != EEPROM_BLOCKSZ) {
-				printf("Error:%d\n",status);
+				printf("Error: %s\n",SMBGetErrorString(status));
 				exit(2);
 			}
 			fwrite(block,EEPROM_BLOCKSZ,1,outFile);
@@ -339,7 +342,7 @@ int main(int argc, char **argv)
 			fread(block,PROGRAM_BLOCKSZ,1,inFile);
 			status=writeProgramBlock(i,block);
 			if (status != PROGRAM_BLOCKSZ) {
-				printf("Error:%d\n",status);
+				printf("Error: %s\n",SMBGetErrorString(status));
 				exit(2);
 			}
 
@@ -354,7 +357,7 @@ int main(int argc, char **argv)
 				fread(block,PROGRAM_BLOCKSZ,1,inFile);
 				status=readProgramBlock(i,block2);				
 				if (status != PROGRAM_BLOCKSZ) {
-					printf("Error:%d\n",status);
+					printf("Error: %s\n",SMBGetErrorString(status));
 					exit(2);
 				}
 				if (memcmp(block,block2,PROGRAM_BLOCKSZ) == 0) {
@@ -402,7 +405,7 @@ int main(int argc, char **argv)
 			fread(block,EEPROM_BLOCKSZ,1,inFile);
 			status=writeEepromBlock(i,block);
 			if (status != EEPROM_BLOCKSZ) {
-				printf("Error:%d\n",status);
+				printf("Error: %s\n",SMBGetErrorString(status));
 				exit(2);
 			}
 
@@ -417,7 +420,7 @@ int main(int argc, char **argv)
 				fread(block,EEPROM_BLOCKSZ,1,inFile);
 				status=readEepromBlock(i,block2);				
 				if (status != EEPROM_BLOCKSZ) {
-					printf("Error:%d\n",status);
+					printf("Error: %s\n",SMBGetErrorString(status));
 					exit(2);
 				}
 				if (memcmp(block,block2,EEPROM_BLOCKSZ) == 0) {

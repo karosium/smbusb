@@ -18,13 +18,17 @@
 #ifdef _WIN32
 #include <windows.h>
 #define sleep(x) Sleep(1000*x)
+#define usleep(x) Sleep(x/1000)
 #endif
 
-#define ERR_DEVICE_OPEN	-1
-#define ERR_ALREADY_OPEN -5
-#define ERR_CLAIM_INTERFACE -10
-#define ERR_FIRMWARE_DOWNLOAD -11
-#define INIT_RETRY -20
+#define ERR_DEVICE_OPEN	-1000
+#define ERR_ALREADY_OPEN -1005
+#define ERR_CLAIM_INTERFACE -1010
+
+#define INIT_RETRY -1020
+
+#define SMB_DEFAULT_VID 0x04B4
+#define SMB_DEFAULT_PID 0x8613
 
 #define SMB_INTERFACE_ID 0x99
 #define SMB_FIRMWARE_VERSION 0x98
@@ -90,3 +94,5 @@ extern int SMBTestCommandACK(unsigned int address, unsigned char command);
 extern int SMBTestCommandWrite(unsigned int address, unsigned char command);
 
 void SMBSetDebugLogFunc(void *logFunc);
+
+const char* SMBGetErrorString(int errorCode);

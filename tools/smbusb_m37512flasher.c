@@ -290,11 +290,11 @@ int main(int argc, char **argv)
     }
 
 	printHeader();	
-	if ((status = SMBOpenDeviceVIDPID(0x04b4,0x8613)) >0) {
+	if ((status = SMBOpenDeviceVIDPID(SMB_DEFAULT_VID,SMB_DEFAULT_PID)) >0) {
 		printf("SMBusb Firmware Version: %d.%d.%d\n",status&0xFF,(status >>8)&0xFF,(status >>16)&0xFF);
 	} else {
 			
-		printf("Error Opening SMBusb: libusb error %d\n",status);
+		printf("Error: %s\n",SMBGetErrorString(status));
 		exit(0);
 	}
 
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 		if (status >0) {			
 			printf("Done!\n");
 		} else {
-			printf("Read Error %d\n",status);
+			printf("Read Error: %s\n",SMBGetErrorString(status));
 		}
 
 		fwrite(block,opSize,1,outFile);
@@ -386,7 +386,7 @@ int main(int argc, char **argv)
 		if (status>0) {
 			fprintf(stderr,"Done!\n");
 		} else {
-			fprintf(stderr,"Write ERROR %d\n",status);
+			fprintf(stderr,"Write Error: %s\n",SMBGetErrorString(status));
 
 		}
 
@@ -394,7 +394,7 @@ int main(int argc, char **argv)
 			printf("Verifying 0x%04x-0x%04x ...\n",opAddress,opAddress+opSize-1);
 			status = readFlash(opAddress,opSize,block2);
 			if (status < 0) {
-				printf("Read ERROR %d\n",status);
+				printf("Read Error: %s\n",SMBGetErrorString(status));
 				exit(0);
 			}
 
