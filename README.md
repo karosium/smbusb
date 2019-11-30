@@ -24,10 +24,7 @@ On Windows:
 
 On *nix:
 ``` 
-aclocal
-libtoolize
-autoconf
-automake --add-missing
+./init.sh
 ./configure (options: --disable-firmware, --disable-tools)
 make
 make install
