@@ -32,5 +32,6 @@ make install
 
 On Windows:
 ``` 
-build.bat
+build.bat 32
+build.bat 64
 ```
