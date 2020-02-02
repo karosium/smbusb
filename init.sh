@@ -1,6 +1,7 @@
-aclocal
-libtoolize
-autoconf
-automake --add-missing
-git submodule init
-git submodule update
+#!/bin/bash
+aclocal || exit 10
+libtoolize || exit 20
+autoreconf -fis || exit 30
+automake --add-missing || exit 40
+git submodule init || exit 50
+git submodule update 
