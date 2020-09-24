@@ -114,6 +114,9 @@ int main(int argc, char*argv[])
 	printf("Charging Voltage:           %u mV\n",SMBReadWord(0x16,0x15));
 	printf("Battery Status:             %04x\n",SMBReadWord(0x16,0x16));
 	printf("Cycle Count:                %u\n",SMBReadWord(0x16,0x17));
+	printf("Design Capacity:            %u mAh(/10mWh)\n",SMBReadWord(0x16,0x18));
+	printf("Design Voltage:             %u mV\n",SMBReadWord(0x16,0x19));
+	printf("Specification Info:         %04x\n",SMBReadWord(0x16,0x1a));
 
 	memset(block, 0, 256);
     size = SMBReadBlock(0x16, 0x23, block);
