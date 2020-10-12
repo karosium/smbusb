@@ -55,7 +55,7 @@ int main(int argc, char*argv[])
 		exit(0);
 	}
 
-	SMBEnablePEC(1);
+	SMBEnablePEC(!(argc > 1 && !strcmp(argv[1], "--no-pec")));
 
 	printf("-------------------------------------------------\n");
 
