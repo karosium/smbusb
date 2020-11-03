@@ -178,8 +178,8 @@ int main(int argc, char **argv)
 
 	          {"save-program",  required_argument, 0, 'p'},
 	          {"save-eeprom",  required_argument, 0, 'e'},
-	          {"flash-program",    required_argument, 0, 'w'},
-	          {"flash-eeprom",    required_argument, 0, 'f'},
+	          {"flash-program",    required_argument, 0, 'f'},
+	          {"flash-eeprom",    required_argument, 0, 'w'},
 
 	          {0, 0, 0, 0}
         };
