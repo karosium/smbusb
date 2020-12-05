@@ -182,7 +182,7 @@ int main(int argc, char **argv)
 		printf("Missing address or command\n");
 		exit(-5);
 	}
-	if (opReadLen == 0 && strcmp("",block)==0) {
+	if (opReadLen == 0 && strcmp("",block)==0  && op!=3) {
 		printf("Missing read length or write data\n");
 		exit(-5);
 	}
