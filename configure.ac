@@ -55,6 +55,21 @@ AC_ARG_ENABLE([firmware],
 	has8051=`sdcc --version 2>&1 | grep "mcs51"`
 	if test "$has8051" == "" ;then
 		AC_MSG_ERROR("Installed SDCC doesn't support 8051 so can't built for EZUSB")
+        else
+                SDCC_MAJOR=`sdcc -v |grep -Po "(\d+?\.\d+?\.\d+?)"|cut -d. -f1`
+                SDCC_MINOR=`sdcc -v |grep -Po "(\d+?\.\d+?\.\d+?)"|cut -d. -f2`
+                SDCC_REV=`sdcc -v |grep -Po "(\d+?\.\d+?\.\d+?)"|cut -d. -f3`
+
+                if test "$SDCC_MAJOR" == 3 ;then
+                        if test "$SDCC_MINOR" -ge 8 ;then
+                                AC_MSG_NOTICE(SDCC 3.8 or greater detected)
+                                AC_CONFIG_COMMANDS[git -C fx2lib checkout master]
+                                AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib_master.patch -sN]
+                        else
+                                AC_MSG_NOTICE(pre-3.8 SDCC detected)
+                                AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib.patch -sN]
+                        fi
+                fi
 	fi
     fi
     
@@ -68,8 +83,6 @@ AS_IF([test "x$enable_tools" != "xno"], [
   SMB_CONF_DIRS="$SMB_CONF_DIRS tools"
   AC_CONFIG_FILES([tools/Makefile])
 ])
-
-AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib.patch -sN]
 
 AC_SUBST(SMB_CONF_DIRS)
 
