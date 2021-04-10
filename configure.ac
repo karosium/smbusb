@@ -59,20 +59,27 @@ AC_ARG_ENABLE([firmware],
                 SDCC_MAJOR=`sdcc -v |grep -Po "(\d+?\.\d+?\.\d+?)"|cut -d. -f1`
                 SDCC_MINOR=`sdcc -v |grep -Po "(\d+?\.\d+?\.\d+?)"|cut -d. -f2`
                 SDCC_REV=`sdcc -v |grep -Po "(\d+?\.\d+?\.\d+?)"|cut -d. -f3`
+		SDCC_NEW=0
 
                 if test "$SDCC_MAJOR" == 3 ;then
                         if test "$SDCC_MINOR" -ge 8 ;then
-                                AC_MSG_NOTICE(SDCC 3.8 or greater detected)
-                                AC_CONFIG_COMMANDS[git -C fx2lib checkout master]
-                                AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib_master.patch -sN]
-                        else
-                                AC_MSG_NOTICE(pre-3.8 SDCC detected)
-                                AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib.patch -sN]
-                        fi
+				SDCC_NEW=1
+			fi
+		fi
+		if test "$SDCC_MAJOR" -ge 4 ;then
+			SDCC_NEW=1
+		fi
+		if test "$SDCC_NEW" == 1 ;then
+                        AC_MSG_NOTICE(SDCC 3.8 or greater detected)
+                        AC_CONFIG_COMMANDS[git -C fx2lib checkout master]
+                        AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib_master.patch -sN]
+                else
+                        AC_MSG_NOTICE(pre-3.8 SDCC detected)
+                        AC_CONFIG_COMMANDS[patch -d fx2lib -p1 <fx2lib.patch -sN]
                 fi
 	fi
     fi
-    
+
     SMB_CONF_DIRS="firmware $SMB_CONF_DIRS"
 ])
 
