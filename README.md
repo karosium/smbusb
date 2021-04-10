@@ -29,7 +29,6 @@ On *nix:
 make
 make install
 ```
-(sdcc versions 3.8 and up see [here](https://github.com/karosium/smbusb/issues/25))
 
 On Windows:
 ``` 
